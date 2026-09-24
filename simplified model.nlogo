@@ -4,33 +4,31 @@ globals [meat-hab-list meat-color-list meat-attr-list ; List of [influence frequ
   unknown-attr-list friend-attributes-dict avg-intention-meat-eaters
   avg-intention-reduced-eaters
   avg-intention-non-eaters
-  agent0-history  ; 用于存储Agent 0的历史数据
-  agent0-tick-data  ; 当前tick的数据
-  ; ===== 分析用全局变量 =====
-  ;; 构念贡献追踪
-  attitude-contribution    ; 态度对意图变化的平均贡献
-  norm-contribution        ; 规范对意图变化的平均贡献
-  exp-contribution-list    ; 每个tick的体验性态度贡献
-  inst-contribution-list   ; 每个tick的工具性态度贡献
-  inj-contribution-list    ; 每个tick的指令性规范贡献
-  desc-contribution-list   ; 每个tick的描述性规范贡献
+  agent0-history  ; save history data
+  agent0-tick-data  ; 
+  ; ===== For analysis =====
+  ;; construct contributions
+  attitude-contribution     
+  norm-contribution       
+  exp-contribution-list    
+  inst-contribution-list  
+  inj-contribution-list    
+  desc-contribution-list  
 
-  ;; 异质性分析
-  early-adopter-ids        ; 早期改变者的ResponseId列表
-  resister-ids             ; 顽固派的ResponseId列表
-  adopter-profile          ; 早期改变者特征 [age, gender, initial-intention, friend-count]
+  early-adopter-ids       
+  resister-ids             
+  adopter-profile          ; [age, gender, initial-intention, friend-count]
 
-  ;; 路径分析
-  transition-paths         ; 所有转变路径 [[agent-id, from-hab, to-hab, tick], ...]
-  relapse-count            ; 回弹次数
-  total-transitions        ; 总转变次数
+  ;; path analysis
+  transition-paths         
+  relapse-count            
+  total-transitions        
 
-  ;; 时间分析
-  tipping-point-tick       ; 引爆点tick（转变加速的拐点）
-  stabilization-tick       ; 稳定tick（连续N个tick无变化）
-  tick-distribution        ; 每个tick的饮食分布 [[tick, no-meat%, reduced%, meat%], ...]
-  ;; 个人追踪
-  tracked-agents           ; 追踪的agent列表（用于个体分析）
+  tipping-point-tick      
+  stabilization-tick       
+  tick-distribution        ; distribution [[tick, no-meat%, reduced%, meat%], ...]
+  ;; individual track
+  tracked-agents           ;
 
 ] ;; Declare global variables
 
@@ -81,13 +79,13 @@ persons-own
   needed-meat-friends
   needed-nonmeat-friends
   my-friend-attributes-list  ; Store this person's friends' requirements list
-  prev-Experiential_Meat  ; 上一次的Experiential_Meat值
-  prev-Instrumental_Meat  ; 上一次的Instrumental_Meat值
-  prev-Injunctive_meat    ; 上一次的Injunctive_meat值
-  prev-Descriptive_meat   ; 上一次的Descriptive_meat值
-  prev-meat-hab           ; 上一次的饮食习惯
-  initial-intention      ; 初始意图（用于异质性分析）
-  initial-meat-hab       ; 初始饮食（用于比较）
+  prev-Experiential_Meat  ; last Experiential_Meat value
+  prev-Instrumental_Meat  ; last Instrumental_Meat value
+  prev-Injunctive_meat    ;  last Injunctive_meat value
+  prev-Descriptive_meat   ; last 的Descriptive_meat value
+  prev-meat-hab           ; last meat eating habits
+  initial-intention      
+  initial-meat-hab       
 ]
 
 ;;; LINK Variables
@@ -107,13 +105,13 @@ to setup
   clean-link-data
   calculate-thresholds
   ;visualize-agent0-network
-; 添加初始意图记录
+
   ask persons [
     set initial-intention Intention_Regression
     set initial-meat-hab meat-hab
   ]
 
-  setup-analysis  ; 初始化分析变量
+  setup-analysis  
 end
 
 
@@ -140,12 +138,12 @@ to setup-analysis
   set tick-distribution []
 
 
-  ; 追踪几个代表性agent
+  ; track a few representative agents
   set tracked-agents (list
-    person 0                                      ; 第一个agent
-    one-of persons with [meat-hab = 2]            ; 随机一个肉食者
-    one-of persons with [meat-hab = 1]            ; 随机一个减肉者
-    one-of persons with [meat-hab = 0]            ; 随机一个不吃肉者
+    person 0                                      ; first agent
+    one-of persons with [meat-hab = 2]            ; random meat eater
+    one-of persons with [meat-hab = 1]            ; random reduced meat eater
+    one-of persons with [meat-hab = 0]            ; random non-meat eater
   )
 end
 
@@ -165,7 +163,7 @@ to setup-persons
     set shape "person"
     set size 0.7
     set color item meat-hab meat-color-list
-        ; 初始化历史变量
+        ; intialize varaible
     set prev-Experiential_Meat Experiential_Meat
     set prev-Instrumental_Meat Instrumental_Meat
     set prev-Injunctive_meat Injunctive_meat
@@ -176,20 +174,20 @@ to setup-persons
 
   create-friendships             ; Call the procedure to create friendships (links)
   layout-circle persons 322
-    ; 初始化Agent 0历史记录
+    ; initialize Agent 0 record
   set agent0-history []
   record-agent0-initial-state
 
 print "=== DATA CHECK ==="
 ask persons [
-  if who < 20 [  ; 检查前5个人
+  if who < 20 [  ; 
     print (word "Agent " who ": Exp_All=" Experiential_All " Inst_All=" Instrumental_All)
   ]
 ]
 
 end
 
-; 记录Agent 0的初始状态
+;  record Agent 0 record
 to record-agent0-initial-state
   let agent0 person 0
   if agent0 != nobody [
@@ -222,7 +220,7 @@ to record-agent0-initial-state
       print (word "Non-Meat Friends: " current-nonmeat-friends)
       print "=============================="
 
-      ; 打印朋友详细信息
+      ; print friends details
       print "--- FRIEND DETAILS ---"
       let friend-num 1
       ask my-links [
@@ -708,7 +706,7 @@ to interact-with-friends
     let my-instrumental-meat Instrumental_Meat
     let my-injunctive-meat Injunctive_meat
     let my-friends count my-links
-    let my-who who  ; ← 保存自己的who
+    let my-who who  ; ← save myself
 
 
     ; interact with each friend
@@ -722,8 +720,8 @@ to interact-with-friends
       let normalized-frequency ((6 - frequency) / 5)
       let interaction-strength (normalized-influence * normalized-frequency)
 
-       ; ===== Agent 0 的朋友信息 =====
-       ; 检查这条link是否连接Agent 0
+       ; ===== Agent 0 friends information =====
+       ; check if this link linked with agent 0
       let end1-who [who] of end1
       let end2-who [who] of end2
 
@@ -787,14 +785,7 @@ to interact-with-friends
     ]
 
 ; apply influence.
-;Experiential influence × 0.15: Only 15% of the calculated experiential influence is applied
-;Instrumental influence × 0.15: Only 15% of the calculated instrumental influence is applied
-;Injunctive influence × 0.25: 25% of the injunctive norm influence is applied
-;Rationale:
-;Realistic gradual change: In reality, people don't completely change their attitudes after one interaction
-;Cognitive resistance: People have some resistance to attitude change
-;Different susceptibility: Normative influence (0.25) is stronger because people are more sensitive to social acceptance and rejection
-;Prevents overshooting: Without damping, attitudes could swing wildly between extremes
+
 
     if (influence-count > 0) [
       let exp-influence total-experiential-influence * social-influence-rate
@@ -808,14 +799,14 @@ to interact-with-friends
 
 
 
-    ; ===== 添加调试 =====
-    if who = 0 [  ; 只检查 Agent 0
+    ; ===== Add debugging =====
+    if who = 0 [  ; check Agent 0
       print (word "Agent 0 influence_count: " influence-count)
       print (word "  exp_influence: " total-experiential-influence)
       print (word "  inst_influence: " total-instrumental-influence)
       print (word "  inj_influence: " total-injunctive-influence)
     ]
-    ; ===== 调试结束 =====
+    ; =====  debugging end=====
 
     if (influence-count > 0) [
       let exp-influence total-experiential-influence * social-influence-rate
@@ -832,7 +823,7 @@ to interact-with-friends
       set Instrumental_Meat bound-value (Instrumental_Meat + inst-influence) 1 7
       set Injunctive_meat bound-value (Injunctive_meat + inj-influence) 1 7
 
-      ; ===== 调试 =====
+      ; ===== Add debugging =====
       if who = 0 [
         print (word "  AFTER: Exp_Meat=" Experiential_Meat " Inst_Meat=" Instrumental_Meat " Inj_meat=" Injunctive_meat)
       ]
@@ -1000,7 +991,7 @@ to update-diet-behaviour
       set attempted-changes attempted-changes + 1
 
       if (random-float 1.0 < change-probability) [
-         ; ===== 记录转变路径 =====
+         ; ===== record transition path =====
         set transition-paths lput (list
           ResponseId
           current-hab
@@ -1012,14 +1003,14 @@ to update-diet-behaviour
 
         set total-transitions total-transitions + 1
 
-        ; ===== 检测回弹 =====
+        ; ===== check relapse =====
         ; 回弹：之前改变过，现在又改回去了
         let previous-change filter [ [path] -> item 0 path = ResponseId ] transition-paths
 
-        if length previous-change > 1 [  ; 至少是第二次改变
+        if length previous-change > 1 [  ; 
           let last-change last previous-change
           let last-new-hab item 2 last-change
-          if last-new-hab = current-hab [  ; 改回了之前的状态
+          if last-new-hab = current-hab [  ; back to previous condition
             set relapse-count relapse-count + 1
           ]
         ]
@@ -1030,7 +1021,7 @@ to update-diet-behaviour
         set total-changes total-changes + 1
         set hab-changes (replace-item current-hab hab-changes (item current-hab hab-changes + 1))
 
-        ; ===== 记录早期改变者 =====
+        ; ===== record early adopter =====
         if ticks <= 20 and not member? ResponseId early-adopter-ids [
           set early-adopter-ids lput ResponseId early-adopter-ids
         ]
@@ -1040,11 +1031,11 @@ to update-diet-behaviour
     set diet-duration (diet-duration + 1)
   ]
 
-  ; ===== 记录顽固派 =====
+  ; ===== record resister =====
   if ticks = 200 [
     set resister-ids [ResponseId] of persons with [
-      meat-hab = 2 and                   ; 始终吃肉
-      diet-duration > 180                ; 持续很久
+      meat-hab = 2 and                   ; Always eating meat
+      diet-duration > 180                ; last for long time
     ]
   ]
 end
@@ -1102,7 +1093,7 @@ to go
 ;    stop
 ;  ]
   tick ;1 social interaction cycle
-  ; ===== 在互动前记录构念值 =====
+  ; ===== record construct before interact =====
   let pre-exp mean [Experiential_Meat] of persons
   let pre-inst mean [Instrumental_Meat] of persons
   let pre-inj mean [Injunctive_meat] of persons
@@ -1113,7 +1104,7 @@ to go
   record-agent0-changes
   update-diet-behaviour
   debug-hab-change
-  ; 记录Agent 0的变化
+  
 
 ;   if debug-mode? [
 ;    debug-friends-count
@@ -1122,15 +1113,15 @@ to go
 
   ;check-link-direction
 
- ; ===== 在互动后记录构念值 =====
+ ; ===== record constructs after interaction =====
   let post-exp mean [Experiential_Meat] of persons
   let post-inst mean [Instrumental_Meat] of persons
   let post-inj mean [Injunctive_meat] of persons
   let post-desc mean [Descriptive_meat] of persons
   let post-intention mean [Intention_Regression] of persons
 
-  ; ===== 构念贡献分析 =====
-  ; 记录每个构念的变化量
+  ; ===== constructs contribution =====
+  ; changes of constructs
   let exp-change post-exp - pre-exp
   let inst-change post-inst - pre-inst
   let inj-change post-inj - pre-inj
@@ -1141,7 +1132,7 @@ to go
   set inj-contribution-list lput (list ticks inj-change) inj-contribution-list
   set desc-contribution-list lput (list ticks desc-change) desc-contribution-list
 
-  ; ===== 时间分析：记录饮食分布 =====
+  ; ===== time analysis：distribution of diet =====
   let total count persons
   let pct-no-meat count persons with [meat-hab = 0] / total * 100
   let pct-reduced count persons with [meat-hab = 1] / total * 100
@@ -1149,22 +1140,22 @@ to go
 
   set tick-distribution lput (list ticks pct-no-meat pct-reduced pct-meat) tick-distribution
 
-  ; ===== 检测引爆点 =====
+  ; ===== tipping point =====
   if tipping-point-tick = -1 and pct-no-meat > 20 [
     set tipping-point-tick ticks
     print (word "TIPPING POINT at tick " ticks ": no-meat% reached " pct-no-meat "%")
   ]
 
-  ; ===== 检测稳定 =====
+  ; ===== stablization check =====
   if stabilization-tick = -1 [
-    ; 检查最近10个tick的分布是否稳定
+    ; check recent 10 tick distribution
     if length tick-distribution >= 10 [
       let recent sublist tick-distribution (length tick-distribution - 10) length tick-distribution
       let max-no-meat max map [ [row] -> item 1 row ] recent
       let min-no-meat max map [ [row] -> item 1 row ] recent
 
 
-      if (max-no-meat - min-no-meat) < 1.0 [  ; 波动小于1%
+      if (max-no-meat - min-no-meat) < 1.0 [  ; Fluctuation of less than 1%
         set stabilization-tick ticks
         print (word "STABILIZED at tick " ticks)
       ]
@@ -1181,7 +1172,7 @@ to debug-hab-change
     print (word "  prev-meat-hab: " prev-meat-hab)
     print (word "  Are they equal? " (meat-hab = prev-meat-hab))
 
-    ; 检查update-diet-behavior中的old-hab
+    ; check update-diet-behavior old-hab
     let current-hab meat-hab
     print (word "  current-hab (local): " current-hab)
   ]
@@ -1189,22 +1180,22 @@ end
 
 
 
-; 记录Agent 0的变化
+; record agent0 changes
 to record-agent0-changes
   let agent0 person 0
   if agent0 != nobody [
     ask agent0 [
-      ;先检查变化，然后再更新prev变量
+      ; check changes before update
       let hab-change? (meat-hab != prev-meat-hab)
 
-      ; 计算变化量
+      ; calculate changes
       let exp-change Experiential_Meat - prev-Experiential_Meat
       let inst-change Instrumental_Meat - prev-Instrumental_Meat
       let inj-change Injunctive_meat - prev-Injunctive_meat
       let desc-change Descriptive_meat - prev-Descriptive_meat
 
 
-      ; 如果有显著变化，记录
+      ; record big differences
       if (abs exp-change > 0.01 or abs inst-change > 0.01 or
           abs inj-change > 0.01 or abs desc-change > 0.01 or hab-change?) [
 
@@ -1225,7 +1216,7 @@ to record-agent0-changes
                " (Δ: " precision desc-change 3 ")")
         print (word "Intention: " Intention_Regression)
 
-        ; 记录当前tick数据
+        ; record current tick
         let tick-data (list
           (list "Tick" ticks)
           (list "Meat_Hab" meat-hab)
@@ -1244,7 +1235,7 @@ to record-agent0-changes
         set agent0-history lput tick-data agent0-history
         set agent0-tick-data tick-data
 
-        ; 更新历史变量
+        ; update historical data
         set prev-Experiential_Meat Experiential_Meat
         set prev-Instrumental_Meat Instrumental_Meat
         set prev-Injunctive_meat Injunctive_meat
@@ -1255,14 +1246,14 @@ to record-agent0-changes
   ]
 end
 
-; 添加新的监控程序
+; add monitor
 to monitor-agent0-interactions
   let agent0 person 0
   if agent0 != nobody [
     ask agent0 [
       print "=== AGENT 0 INTERACTION ANALYSIS ==="
 
-      ; 分析每个朋友的影响
+      ; analyse each friend's influence
       let total-exp-influence 0
       let total-inst-influence 0
       let total-inj-influence 0
@@ -1272,12 +1263,12 @@ to monitor-agent0-interactions
         let friend-id [ResponseId] of friend
         let friend-hab [meat-hab] of friend
 
-        ; 计算互动强度
+        ; calculate interaction strength 
         let norm-influence (influence / 10)
         let norm-frequency ((6 - frequency) / 5)
         let interaction-strength (norm-influence * norm-frequency)
 
-        ; 计算各项影响
+        ; calculate influence
         let exp-influence ([Experiential_Meat] of other-end - [Experiential_Meat] of myself) * interaction-strength * social-influence-rate
         let inst-influence ([Instrumental_Meat] of other-end - [Instrumental_Meat] of myself) * interaction-strength * social-influence-rate
         let inj-influence ([Injunctive_meat] of other-end - [Injunctive_meat] of myself) * interaction-strength * social-influence-rate
@@ -1298,7 +1289,7 @@ to monitor-agent0-interactions
       print (word "  Instrumental: " precision total-inst-influence 4)
       print (word "  Injunctive: " precision total-inj-influence 4)
 
-      ; 预测下一个tick的值
+      ; 
       let next-exp (Experiential_Meat + total-exp-influence)
       let next-inst (Instrumental_Meat + total-inst-influence)
       let next-inj (Injunctive_meat + total-inj-influence)
@@ -1311,7 +1302,7 @@ to monitor-agent0-interactions
   ]
 end
 
-; 添加一个函数来显示Agent 0的完整历史
+; show Agent 0 complete history
 to show-agent0-history
   let agent0 person 0
   if agent0 != nobody [
@@ -1338,20 +1329,20 @@ to show-agent0-history
   ]
 end
 
-; 添加一个函数来导出Agent 0数据到CSV
+; Add a function to export Agent 0 data to CSV.
 to export-agent0-data
   let agent0 person 0
   if agent0 != nobody [
-    ; 准备数据列表
+    ; Prepare the data list
     let data-to-export []
 
-    ; 添加标题行作为第一个项目
+    ; Add a header row as the first item.
     let headers ["Tick" "Meat_Hab" "Experiential_Meat" "Instrumental_Meat"
                  "Injunctive_meat" "Descriptive_meat" "Intention"
                  "Exp_Change" "Inst_Change" "Inj_Change" "Desc_Change" "Hab_Changed"]
     set data-to-export lput headers data-to-export
 
-    ; 收集所有数据行
+    ; Collect all data rows.
     foreach agent0-history [
       tick-data ->
       let tick1 item 1 (item 0 tick-data)
@@ -1362,14 +1353,14 @@ to export-agent0-data
       let desc-meat item 1 (item 5 tick-data)
       let intention item 1 (item 6 tick-data)
 
-      ; 检查是否有变化数据
+      ; Check for changed data.
       let exp-change ifelse-value (length tick-data > 7) [item 1 (item 7 tick-data)] [0]
       let inst-change ifelse-value (length tick-data > 8) [item 1 (item 8 tick-data)] [0]
       let inj-change ifelse-value (length tick-data > 9) [item 1 (item 9 tick-data)] [0]
       let desc-change ifelse-value (length tick-data > 10) [item 1 (item 10 tick-data)] [0]
       let hab-changed ifelse-value (length tick-data > 11) [item 1 (item 11 tick-data)] [false]
 
-      ; 创建数据行
+      ; Create data row
       let data-row (list tick1 meat-hab-val exp-meat inst-meat
                         inj-meat desc-meat intention
                         exp-change inst-change inj-change desc-change hab-changed)
@@ -1377,7 +1368,7 @@ to export-agent0-data
       set data-to-export lput data-row data-to-export
     ]
 
-    ; 一次性写入CSV文件
+    ; save as csv
     csv:to-file "agent0_history.csv" data-to-export
 
     print "Agent 0 data exported to agent0_history.csv"
@@ -1386,16 +1377,16 @@ end
 ;to export-agent0-data
 ;  let agent0 person 0
 ;  if agent0 != nobody [
-;    ; 创建文件
+;    ; create file
 ;    file-open "agent0_history.csv"
 ;
-;    ; 写入标题行
+;    ; Write the header row
 ;    let headers ["Tick" "Meat_Hab" "Experiential_Meat" "Instrumental_Meat"
 ;                 "Injunctive_meat" "Descriptive_meat" "Intention"
 ;                 "Exp_Change" "Inst_Change" "Inj_Change" "Desc_Change" "Hab_Changed"]
 ;        file-print headers
 ;
-;    ; 写入数据
+;    ; Write data
 ;    foreach agent0-history [
 ;      tick-data ->
 ;      let tick1 item 1 (item 0 tick-data)
@@ -1406,7 +1397,7 @@ end
 ;      let desc-meat item 1 (item 5 tick-data)
 ;      let intention item 1 (item 6 tick-data)
 ;
-;      ; 检查是否有变化数据
+;      ; Check for changed data.
 ;      let exp-change ifelse-value (length tick-data > 7) [item 1 (item 7 tick-data)] [0]
 ;      let inst-change ifelse-value (length tick-data > 8) [item 1 (item 8 tick-data)] [0]
 ;      let inj-change ifelse-value (length tick-data > 9) [item 1 (item 9 tick-data)] [0]
@@ -1425,14 +1416,14 @@ end
 ;
 
 
-; 在setup中添加一个按钮来显示Agent 0的初始网络
+; Add a button in `setup` to display the initial network of Agent 0.
 to visualize-agent0-network
   clear-all
   setup-globals
   load-friend-attributes
   setup-persons
 
-  ; 只显示Agent 0和它的朋友
+  ; Show only Agent 0 and its friends.
   ask persons [
     ifelse (self = person 0 or link-neighbor? person 0) [
       set size 1.5
@@ -1444,14 +1435,14 @@ to visualize-agent0-network
     ]
   ]
 
-  ; 高亮Agent 0
+  ; highlight Agent 0
   ask person 0 [
     set size 2.5
     set color green
     set label (word "AGENT 0\n" ResponseId "\nDiet:" meat-hab)
   ]
 
-  ; 设置连接标签
+  ; set connection label
   ask links [
     if [who] of end1 = 0 or [who] of end2 = 0 [
       set label (word "Inf:" influence "\nFreq:" frequency)
@@ -1462,7 +1453,7 @@ to visualize-agent0-network
   layout-spring persons links 0.3 5 1
 end
 
-; 添加一个简单的仪表板显示
+; Add a simple dashboard display.
 to show-agent0-dashboard
   let agent0 person 0
   if agent0 != nobody [
@@ -1493,26 +1484,22 @@ end
 to finalize-analysis
   print "=== FINAL ANALYSIS ==="
 
-  ; ===== 1. 构念贡献分析 =====
+  
   analyze-construct-contributions
 
-  ; ===== 2. 异质性分析 =====
   analyze-early-adopters
 
-  ; ===== 3. 路径分析 =====
   analyze-transition-paths
 
-  ; ===== 4. 时间分析 =====
   analyze-temporal-patterns
 
-  ; ===== 5. 导出所有数据 =====
   export-all-analysis-data
 end
 
 to analyze-construct-contributions
   print "=== CONSTRUCT CONTRIBUTIONS ==="
 
-  ; 计算每个构念的平均变化
+  ; Calculate the average change for each construct.
 
   let avg-exp-change mean map [ [row] -> item 1 row ] exp-contribution-list
   let avg-inst-change mean map [ [row] -> item 1 row ] inst-contribution-list
@@ -1521,7 +1508,7 @@ to analyze-construct-contributions
 
 
 
-  ; 计算总变化量
+  ; Calculate the total change.
   let total-change abs avg-exp-change + abs avg-inst-change + abs avg-inj-change + abs avg-desc-change
 
   if total-change > 0 [
@@ -1545,7 +1532,7 @@ to analyze-early-adopters
   let others persons with [not member? ResponseId early-adopter-ids and not member? ResponseId resister-ids]
 
   if any? early-adopters [
-    let n count early-adopters  ; ← n 在这里定义
+    let n count early-adopters  ;
 
     print (word "Early adopters (n=" count early-adopters "):")
     print (word "  Avg age: " precision mean [age] of early-adopters 1)
@@ -1574,7 +1561,6 @@ end
 to analyze-transition-paths
   print "=== TRANSITION PATHS ==="
 
-  ; 统计不同路径（对列表用 length，不是 count）
   let meat-to-reduced length filter [ [path] -> item 1 path = 2 and item 2 path = 1 ] transition-paths
   let meat-to-none length filter [ [path] -> item 1 path = 2 and item 2 path = 0 ] transition-paths
   let reduced-to-meat length filter [ [path] -> item 1 path = 1 and item 2 path = 2 ] transition-paths
@@ -1598,7 +1584,6 @@ to analyze-temporal-patterns
   print (word "Tipping point tick: " tipping-point-tick)
   print (word "Stabilization tick: " stabilization-tick)
 
-  ; 计算转变速率
   if length tick-distribution > 1 [
     let first-dist item 0 tick-distribution
     let last-dist last tick-distribution
@@ -1610,7 +1595,7 @@ end
 
 
 to export-all-analysis-data
-  ; ===== 1. 导出饮食分布时间序列 =====
+  ; ===== 1. Export dietary distribution time series =====
   let dist-data [["tick" "no_meat_pct" "reduced_pct" "meat_pct"]]
   foreach tick-distribution [
     [row] ->
@@ -1618,7 +1603,7 @@ to export-all-analysis-data
   ]
   csv:to-file "diet_distribution.csv" dist-data
 
-  ; ===== 2. 导出构念贡献时间序列 =====
+  ; ===== 2. Export the time series of construct contributions. =====
   let construct-data [["tick" "experiential_change" "instrumental_change" "injunctive_change" "descriptive_change"]]
   let n length exp-contribution-list
   let i 0
@@ -1633,7 +1618,7 @@ to export-all-analysis-data
   ]
   csv:to-file "construct_contributions.csv" construct-data
 
-  ; ===== 3. 导出转变路径 =====
+  ; ===== 3. Export transition path =====
   let path-data [["agent_id" "from_hab" "to_hab" "tick" "intention" "diet_duration"]]
   foreach transition-paths [
     [path] ->
@@ -1641,7 +1626,7 @@ to export-all-analysis-data
   ]
   csv:to-file "transition_paths.csv" path-data
 
-  ; ===== 4. 导出异质性数据 =====
+  ; ===== 4. Export heterogeneous data =====
   let agent-data [["agent_id" "age" "gender" "initial_meat_hab" "final_meat_hab"
                    "initial_intention" "final_intention" "friend_count"
                    "meat_friend_count" "nonmeat_friend_count" "total_changes"
@@ -1651,7 +1636,7 @@ to export-all-analysis-data
     let is-early member? ResponseId early-adopter-ids
     let is-res member? ResponseId resister-ids
     let changes length  filter [ [path] -> item 0 path = ResponseId ] transition-paths
-; 性别转换为可读格式
+; Convert gender to a readable format.
   let gender-label ifelse-value (gender = 0) ["Female"] ["Male"]
 
 
@@ -1665,7 +1650,7 @@ to export-all-analysis-data
   ]
   csv:to-file "agent_profiles.csv" agent-data
 
-  ; ===== 5. 导出汇总统计 =====
+  ; ===== 5. export summarised data =====
 
   let summary-data (list
     (list "metric" "value")
@@ -1692,10 +1677,10 @@ end
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; 敏感性分析输出指标 (Reporters)
+;; Reporters
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; 1. 最终饮食分布
+;; 1. distribution of diet
 to-report final-meat-eater-count
   report count persons with [meat-hab = 2]
 end
